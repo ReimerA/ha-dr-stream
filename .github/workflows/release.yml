@@ -1,0 +1,40 @@
+name: Release
+
+# Push a tag like v0.4.0 to release. The tag must match "version" in
+# manifest.json and have a section in CHANGELOG.md; HACS then offers the
+# new version to users.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  release:
+    needs: [tests, validate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag, manifest version and changelog agree
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest=$(python3 -c "import json; print(json.load(open('custom_components/dr_tv/manifest.json'))['version'])")
+          if [ "$tag" != "$manifest" ]; then
+            echo "::error::Tag v$tag does not match manifest.json version $manifest"
+            exit 1
+          fi
+          python3 scripts/changelog_section.py "$tag" > release_notes.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release_notes.md

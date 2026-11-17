@@ -78,4 +78,43 @@ docker compose restart          # after Python changes; card changes need only a
 # Tests and lint (Home Assistant needs Python 3.13)
 docker run --rm -v "$PWD":/src -w /src python:3.13 bash -c \
   "pip install -q -r requirements_test.txt ruff && pytest -q && ruff check . && ruff format --check ."
+
+# Home Assistant's validator (the same check CI runs)
+docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest
+
+# Check that DR's real API still matches what the integration expects
+python scripts/check_dr_api.py
 ```
+
+GitHub Actions runs on every push and pull request:
+
+| Workflow | What it does |
+|---|---|
+| `tests.yml` | ruff lint and format check, pytest with at least 95% coverage |
+| `validate.yml` | hassfest (Home Assistant's checker) and the HACS validator; also weekly |
+| `dr-api.yml` | Daily call to DR's real API, so changes on DR's side are noticed |
+| `release.yml` | Publishes a GitHub release when a version tag is pushed |
+
+## Releasing
+
+HACS offers new versions to users from GitHub releases.
+
+1. Move the items under `[Unreleased]` in `CHANGELOG.md` into a new
+   `## [x.y.z]` section.
+2. Set the same `"version": "x.y.z"` in `custom_components/dr_tv/manifest.json`.
+3. Commit, then tag and push: `git tag vx.y.z && git push origin main vx.y.z`.
+
+The release workflow runs all checks, verifies that the tag, manifest and
+changelog agree, and creates the GitHub release with the changelog section as
+release notes.
+
+Versions follow [Semantic Versioning](https://semver.org/): bump the patch
+number (0.3.1) for fixes, the minor number (0.4.0) for new features, and the
+major number for changes that require users to do something.
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE). The bundled hls.js is also
+Apache-2.0 ([its license](custom_components/dr_tv/frontend/hls.js-LICENSE)).
+
+This project is not affiliated with or endorsed by DR.

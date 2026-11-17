@@ -1,0 +1,23 @@
+name: DR API check
+
+# The tests use canned DR responses, so they stay green if DR changes its
+# (unofficial) API. This job calls DR's real API every day and fails if the
+# data the integration relies on is gone or has changed shape.
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+      - run: pip install -r requirements_test.txt
+      - run: python scripts/check_dr_api.py
