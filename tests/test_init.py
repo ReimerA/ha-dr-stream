@@ -130,7 +130,9 @@ async def test_media_source(hass: HomeAssistant, mock_dr_api) -> None:
     titles = [child.title for child in root.children]
     assert "DR1: TV Avisen" in titles
     assert len(titles) == len(FALLBACK_CHANNELS)
+    # Every tile has a picture, without quotes (they break the frontend's CSS).
+    assert all(c.thumbnail and "'" not in c.thumbnail for c in root.children)
 
     resolved = await async_resolve_media(hass, f"media-source://{DOMAIN}/20876", None)
     assert resolved.url == FALLBACK_CHANNELS["20876"]["stream_url"]
-    assert resolved.mime_type == "application/vnd.apple.mpegurl"
+    assert resolved.mime_type == "application/x-mpegURL"

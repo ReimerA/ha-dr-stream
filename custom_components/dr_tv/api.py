@@ -43,10 +43,16 @@ class Programme:
 
 
 def resize_image(url: str | None, width: int, height: int) -> str | None:
-    """DR image URLs default to 3000px; ask DR's resizer for a smaller one."""
+    """DR image URLs default to 3000px; ask DR's resizer for a smaller one.
+
+    DR's URLs also contain single quotes (Format='png'). Those break the
+    unquoted CSS url() the Home Assistant frontend uses for media thumbnails,
+    so they are percent-encoded, which DR accepts.
+    """
     if url is None:
         return None
-    return _IMAGE_SIZE_RE.sub(f"Width={width}&Height={height}", url)
+    url = _IMAGE_SIZE_RE.sub(f"Width={width}&Height={height}", url)
+    return url.replace("'", "%27")
 
 
 class DRTVClient:

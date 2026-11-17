@@ -20,7 +20,9 @@ from .api import Channel
 from .const import DOMAIN
 from .coordinator import DRTVConfigEntry, DRTVData, fallback_channels
 
-HLS_MIME_TYPE = "application/vnd.apple.mpegurl"
+# The frontend only uses its HLS player for exactly this spelling; the more
+# official "application/vnd.apple.mpegurl" gives "media not supported".
+HLS_MIME_TYPE = "application/x-mpegURL"
 
 
 async def async_get_media_source(hass: HomeAssistant) -> DRTVMediaSource:

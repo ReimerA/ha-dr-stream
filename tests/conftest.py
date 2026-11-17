@@ -24,7 +24,9 @@ def channel_payload(channel_id: str) -> dict[str, Any]:
         "id": channel_id,
         "type": "channel",
         "title": info["title"],
-        "images": {"logo": "https://img.example/logo?Width=2160&Height=2160"},
+        "images": {
+            "logo": "https://img.example/logo?Format='png'&Width=2160&Height=2160"
+        },
         "customFields": {
             "hlsURL": info["stream_url"],
             "hlsWithSubtitlesURL": info["stream_url"].replace("hls", "texthls"),
@@ -43,7 +45,7 @@ def schedule_payload() -> list[dict[str, Any]]:
                 "title": title,
                 "shortDescription": f"About {title}",
                 "images": {
-                    "tile": f"https://img.example/{title}?Width=3000&Height=1688"
+                    "tile": f"https://img.example/{title}?Format='png'&Width=3000&Height=1688"
                 },
             },
         }
