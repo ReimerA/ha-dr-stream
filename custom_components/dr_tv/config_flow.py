@@ -12,7 +12,7 @@ from .const import DOMAIN
 class DRTVConfigFlow(ConfigFlow, domain=DOMAIN):
     """Add DR TV from the UI. There is nothing to configure."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

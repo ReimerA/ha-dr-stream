@@ -7,6 +7,9 @@ from typing import Final
 
 DOMAIN: Final = "dr_tv"
 
+# Where the dashboard card (and hls.js) are served from.
+FRONTEND_URL: Final = "/dr_tv"
+
 API_BASE: Final = "https://production-cdn.dr-massive.com/api"
 API_PARAMS: Final = {
     "device": "web_browser",

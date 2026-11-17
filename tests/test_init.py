@@ -3,21 +3,17 @@
 from __future__ import annotations
 
 from homeassistant import config_entries
-from homeassistant.components.media_player import (
-    ATTR_INPUT_SOURCE,
-    ATTR_INPUT_SOURCE_LIST,
-    ATTR_MEDIA_TITLE,
-    DOMAIN as MP_DOMAIN,
-    SERVICE_SELECT_SOURCE,
-)
 from homeassistant.components.media_source import (
     async_browse_media,
     async_resolve_media,
 )
-from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_registry as er,
+    issue_registry as ir,
+)
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -31,15 +27,23 @@ from custom_components.dr_tv.const import (
 
 from .conftest import channel_payload, schedule_payload
 
-ENTITY_ID = "media_player.dr_tv"
 
-
-async def _setup(hass: HomeAssistant) -> MockConfigEntry:
-    entry = MockConfigEntry(domain=DOMAIN, title="DR TV", unique_id=DOMAIN)
+async def _setup(hass: HomeAssistant, version: int = 2) -> MockConfigEntry:
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="DR TV", unique_id=DOMAIN, version=version
+    )
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
+
+
+async def _channels(hass: HomeAssistant, hass_ws_client) -> dict[str, dict]:
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "dr_tv/channels"})
+    msg = await client.receive_json()
+    assert msg["success"], msg
+    return {c["title"]: c for c in msg["result"]["channels"]}
 
 
 async def test_config_flow(hass: HomeAssistant, mock_dr_api) -> None:
@@ -56,38 +60,48 @@ async def test_config_flow(hass: HomeAssistant, mock_dr_api) -> None:
     assert result["type"] is FlowResultType.ABORT
 
 
-async def test_media_player(hass: HomeAssistant, mock_dr_api) -> None:
+async def test_channels_websocket(
+    hass: HomeAssistant, mock_dr_api, hass_ws_client
+) -> None:
     await _setup(hass)
+    channels = await _channels(hass, hass_ws_client)
 
-    state = hass.states.get(ENTITY_ID)
-    assert state.state == STATE_ON
-    assert state.attributes[ATTR_INPUT_SOURCE] == "DR1"
-    assert state.attributes[ATTR_INPUT_SOURCE_LIST] == [
-        c["title"] for c in FALLBACK_CHANNELS.values()
-    ]
-    assert state.attributes[ATTR_MEDIA_TITLE] == "TV Avisen"
-    assert state.attributes["next_title"] == "Aftenshowet"
-    assert state.attributes["stream_url"] == FALLBACK_CHANNELS["20875"]["stream_url"]
-    assert "Width=640&Height=360" in state.attributes["entity_picture"]
+    assert list(channels) == [c["title"] for c in FALLBACK_CHANNELS.values()]
+    dr1 = channels["DR1"]
+    assert dr1["stream_url"] == FALLBACK_CHANNELS["20875"]["stream_url"]
+    assert dr1["now"]["title"] == "TV Avisen"
+    assert dr1["next"]["title"] == "Aftenshowet"
+    assert "Width=640&Height=360" in dr1["now"]["image"]
+    assert "'" not in dr1["now"]["image"]
+    assert channels["DR2"]["now"]["title"] == "Deadline"
+    # No schedule for this channel in the canned data.
+    assert channels["DR Ramasjang"]["now"] is None
 
-    await hass.services.async_call(
-        MP_DOMAIN,
-        SERVICE_SELECT_SOURCE,
-        {ATTR_ENTITY_ID: ENTITY_ID, ATTR_INPUT_SOURCE: "DR2"},
-        blocking=True,
-    )
-    state = hass.states.get(ENTITY_ID)
-    assert state.attributes[ATTR_INPUT_SOURCE] == "DR2"
-    assert state.attributes[ATTR_MEDIA_TITLE] == "Deadline"
+    # The integration has no entities any more.
+    assert hass.states.async_all() == []
 
-    await hass.services.async_call(
-        MP_DOMAIN, "turn_off", {ATTR_ENTITY_ID: ENTITY_ID}, blocking=True
-    )
-    assert hass.states.get(ENTITY_ID).state == STATE_OFF
+
+async def test_channels_websocket_not_loaded(
+    hass: HomeAssistant, hass_ws_client
+) -> None:
+    assert await async_setup_component(hass, DOMAIN, {})
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "dr_tv/channels"})
+    msg = await client.receive_json()
+    assert not msg["success"]
+    assert msg["error"]["code"] == "not_loaded"
+
+
+async def test_card_is_served(hass: HomeAssistant, mock_dr_api, hass_client) -> None:
+    await _setup(hass)
+    client = await hass_client()
+    for path in ("/dr_tv/dr-tv-card.js", "/dr_tv/hls.min.js"):
+        resp = await client.get(path)
+        assert resp.status == 200, path
 
 
 async def test_dr_down_uses_fallback_and_raises_issue(
-    hass: HomeAssistant, aioclient_mock
+    hass: HomeAssistant, aioclient_mock, hass_ws_client
 ) -> None:
     for channel_id in FALLBACK_CHANNELS:
         aioclient_mock.get(f"{API_BASE}/items/{channel_id}", status=500)
@@ -96,11 +110,10 @@ async def test_dr_down_uses_fallback_and_raises_issue(
     entry = await _setup(hass)
     coordinator = entry.runtime_data
 
-    state = hass.states.get(ENTITY_ID)
-    assert state.state == STATE_ON
-    assert state.attributes[ATTR_INPUT_SOURCE] == "DR1"
-    assert state.attributes[ATTR_MEDIA_TITLE] == "DR1"
-    assert state.attributes["stream_url"] == FALLBACK_CHANNELS["20875"]["stream_url"]
+    # Streams still work from the built-in channel list.
+    channels = await _channels(hass, hass_ws_client)
+    assert channels["DR1"]["stream_url"] == FALLBACK_CHANNELS["20875"]["stream_url"]
+    assert channels["DR1"]["now"] is None
 
     issues = ir.async_get(hass)
     for _ in range(1, FAILURES_BEFORE_ISSUE):
@@ -119,7 +132,34 @@ async def test_dr_down_uses_fallback_and_raises_issue(
     await coordinator.async_refresh()
     await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, ISSUE_API_UNAVAILABLE) is None
-    assert hass.states.get(ENTITY_ID).attributes[ATTR_MEDIA_TITLE] == "TV Avisen"
+    channels = await _channels(hass, hass_ws_client)
+    assert channels["DR1"]["now"]["title"] == "TV Avisen"
+
+
+async def test_migration_removes_old_media_player(
+    hass: HomeAssistant, mock_dr_api
+) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, title="DR TV", unique_id=DOMAIN, version=1)
+    entry.add_to_hass(hass)
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, entry.entry_id)}
+    )
+    ent_reg = er.async_get(hass)
+    ent_reg.async_get_or_create(
+        "media_player",
+        DOMAIN,
+        f"{entry.entry_id}_player",
+        config_entry=entry,
+        device_id=device.id,
+    )
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.version == 2
+    assert er.async_entries_for_config_entry(ent_reg, entry.entry_id) == []
+    assert dev_reg.async_get(device.id) is None
 
 
 async def test_media_source(hass: HomeAssistant, mock_dr_api) -> None:

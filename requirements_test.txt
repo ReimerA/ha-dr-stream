@@ -1,1 +1,3 @@
 pytest-homeassistant-custom-component
+# The integration depends on "frontend" (it registers the dashboard card).
+home-assistant-frontend
