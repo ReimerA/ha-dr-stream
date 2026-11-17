@@ -1,4 +1,4 @@
-"""Data update coordinator for DR TV."""
+"""Data update coordinator for DR TV and DR Radio."""
 
 from __future__ import annotations
 
@@ -14,12 +14,13 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .api import Channel, DRTVClient, DRTVError, Programme
+from .api import Channel, DRTVClient, DRTVError, Programme, RadioStation
 from .const import (
     CHANNEL_REFRESH_INTERVAL,
     DOMAIN,
     FAILURES_BEFORE_ISSUE,
     FALLBACK_CHANNELS,
+    FALLBACK_RADIO,
     ISSUE_API_UNAVAILABLE,
     SCAN_INTERVAL,
     SCHEDULE_WINDOW_HOURS,
@@ -32,10 +33,11 @@ type DRTVConfigEntry = ConfigEntry[DRTVCoordinator]
 
 @dataclass
 class DRTVData:
-    """Everything the entities need."""
+    """Everything the card and the Media panel need."""
 
     channels: dict[str, Channel]
     schedules: dict[str, list[Programme]] = field(default_factory=dict)
+    radio: dict[str, RadioStation] = field(default_factory=dict)
 
     def now_playing(
         self, channel_id: str, now: datetime | None = None
@@ -62,6 +64,20 @@ def fallback_channels() -> dict[str, Channel]:
     }
 
 
+def fallback_radio() -> dict[str, RadioStation]:
+    """Hard-coded radio stations, used until (or if) DR's radio API answers."""
+    return {
+        station_id: RadioStation(
+            id=station_id,
+            title=title,
+            stream_url=url,
+            group_id=group_id,
+            group_title=group_title,
+        )
+        for station_id, title, url, group_id, group_title in FALLBACK_RADIO
+    }
+
+
 class DRTVCoordinator(DataUpdateCoordinator[DRTVData]):
     """Fetch channels and schedules from DR.
 
@@ -83,11 +99,14 @@ class DRTVCoordinator(DataUpdateCoordinator[DRTVData]):
         self.client = DRTVClient(async_get_clientsession(hass))
         self._channels: dict[str, Channel] = fallback_channels()
         self._channels_fetched: datetime | None = None
+        self._radio: dict[str, RadioStation] = fallback_radio()
+        self._radio_fetched: datetime | None = None
         self._failures = 0
 
     async def _async_update_data(self) -> DRTVData:
         now = dt_util.utcnow()
         await self._async_refresh_channels(now)
+        await self._async_refresh_radio(now)
 
         try:
             schedules = await self.client.async_get_schedules(
@@ -96,10 +115,25 @@ class DRTVCoordinator(DataUpdateCoordinator[DRTVData]):
         except DRTVError as err:
             self._record_failure(err)
             previous = self.data.schedules if self.data else {}
-            return DRTVData(channels=self._channels, schedules=previous)
+            return DRTVData(self._channels, previous, self._radio)
 
         self._record_success()
-        return DRTVData(channels=self._channels, schedules=schedules)
+        return DRTVData(self._channels, schedules, self._radio)
+
+    async def _async_refresh_radio(self, now: datetime) -> None:
+        if (
+            self._radio_fetched is not None
+            and now - self._radio_fetched < CHANNEL_REFRESH_INTERVAL
+        ):
+            return
+        try:
+            stations = await self.client.async_get_radio_stations()
+        except DRTVError as err:
+            _LOGGER.debug("Keeping known radio stations: %s", err)
+            return
+        if stations:
+            self._radio = {station.id: station for station in stations}
+            self._radio_fetched = now
 
     async def _async_refresh_channels(self, now: datetime) -> None:
         if (

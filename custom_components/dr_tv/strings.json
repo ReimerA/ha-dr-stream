@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "description": "Adds DR's live channels to the Media panel and makes the DR TV dashboard card available."
+        "description": "Adds DR's live TV channels and radio stations to the Media panel and makes the DR TV dashboard card available."
       }
     },
     "abort": {

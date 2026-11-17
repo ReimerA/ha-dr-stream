@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 import pytest
 
-from custom_components.dr_tv.const import API_BASE, FALLBACK_CHANNELS
+from custom_components.dr_tv.const import API_BASE, FALLBACK_CHANNELS, RADIO_API_URL
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -68,6 +68,66 @@ def schedule_payload() -> list[dict[str, Any]]:
     ]
 
 
+def _icy(code: str) -> list[dict[str, Any]]:
+    return [
+        {"format": "HLS", "url": f"https://hls.example/{code}/master.m3u8"},
+        {
+            "format": "ICY",
+            "bitrate": 128,
+            "url": f"https://live-icy.dr.dk/A/{code}L.mp3",
+        },
+        {
+            "format": "ICY",
+            "bitrate": 192,
+            "url": f"https://live-icy.dr.dk/A/{code}H.mp3",
+        },
+    ]
+
+
+def _image(image_id: str) -> list[dict[str, Any]]:
+    return [
+        {"id": f"urn:dr:radio:image:{image_id}-wide", "ratio": "16:9"},
+        {"id": f"urn:dr:radio:image:{image_id}", "ratio": "1:1"},
+    ]
+
+
+def radio_payload() -> list[dict[str, Any]]:
+    """A trimmed copy of api.dr.dk/radio/v4/channels."""
+    return [
+        {
+            "slug": "p4",
+            "title": "P4",
+            "order": 400,
+            "imageAssets": _image("p4"),
+            "districts": [
+                {"slug": "p4fyn", "title": "P4 Fyn", "audioAssets": _icy("A07")},
+                {
+                    "slug": "p4kbh",
+                    "title": "P4 København",
+                    "audioAssets": _icy("A08"),
+                    "imageAssets": _image("p4kbh"),
+                },
+            ],
+        },
+        {
+            "slug": "p1",
+            "title": "P1",
+            "order": 100,
+            "imageAssets": _image("p1"),
+            "audioAssets": _icy("A03"),
+        },
+        # Internal web feed: HLS only, no MP3 -> not a station.
+        {
+            "slug": "dr-web-2",
+            "title": "WEB2",
+            "order": 900,
+            "audioAssets": [{"format": "HLS", "url": "https://hls.example/web2.m3u8"}],
+        },
+        # No stream at all -> not a station.
+        {"slug": "p7mix", "title": "P7 MIX", "order": 700, "imageAssets": _image("p7")},
+    ]
+
+
 @pytest.fixture
 def mock_dr_api(aioclient_mock) -> Any:
     """Answer DR's API with canned data."""
@@ -76,4 +136,5 @@ def mock_dr_api(aioclient_mock) -> Any:
             f"{API_BASE}/items/{channel_id}", json=channel_payload(channel_id)
         )
     aioclient_mock.get(f"{API_BASE}/schedules", json=schedule_payload())
+    aioclient_mock.get(RADIO_API_URL, json=radio_payload())
     return aioclient_mock

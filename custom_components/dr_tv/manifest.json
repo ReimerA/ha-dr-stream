@@ -1,6 +1,6 @@
 {
   "domain": "dr_tv",
-  "name": "DR TV",
+  "name": "DR TV & Radio",
   "codeowners": [],
   "config_flow": true,
   "dependencies": ["frontend", "http", "media_source", "websocket_api"],
@@ -10,5 +10,5 @@
   "issue_tracker": "https://github.com/OWNER/ha-dr-stream/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

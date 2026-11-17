@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from homeassistant import config_entries
+from homeassistant.components.media_player import BrowseError
 from homeassistant.components.media_source import (
+    Unresolvable,
     async_browse_media,
     async_resolve_media,
 )
@@ -15,6 +17,7 @@ from homeassistant.helpers import (
     issue_registry as ir,
 )
 from homeassistant.setup import async_setup_component
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.dr_tv.const import (
@@ -22,10 +25,12 @@ from custom_components.dr_tv.const import (
     DOMAIN,
     FAILURES_BEFORE_ISSUE,
     FALLBACK_CHANNELS,
+    FALLBACK_RADIO,
     ISSUE_API_UNAVAILABLE,
+    RADIO_API_URL,
 )
 
-from .conftest import channel_payload, schedule_payload
+from .conftest import channel_payload, radio_payload, schedule_payload
 
 
 async def _setup(hass: HomeAssistant, version: int = 2) -> MockConfigEntry:
@@ -106,6 +111,7 @@ async def test_dr_down_uses_fallback_and_raises_issue(
     for channel_id in FALLBACK_CHANNELS:
         aioclient_mock.get(f"{API_BASE}/items/{channel_id}", status=500)
     aioclient_mock.get(f"{API_BASE}/schedules", status=500)
+    aioclient_mock.get(RADIO_API_URL, status=500)
 
     entry = await _setup(hass)
     coordinator = entry.runtime_data
@@ -129,6 +135,7 @@ async def test_dr_down_uses_fallback_and_raises_issue(
             f"{API_BASE}/items/{channel_id}", json=channel_payload(channel_id)
         )
     aioclient_mock.get(f"{API_BASE}/schedules", json=schedule_payload())
+    aioclient_mock.get(RADIO_API_URL, json=radio_payload())
     await coordinator.async_refresh()
     await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, ISSUE_API_UNAVAILABLE) is None
@@ -162,17 +169,88 @@ async def test_migration_removes_old_media_player(
     assert dev_reg.async_get(device.id) is None
 
 
-async def test_media_source(hass: HomeAssistant, mock_dr_api) -> None:
+async def test_media_source_root(hass: HomeAssistant, mock_dr_api) -> None:
     assert await async_setup_component(hass, "media_source", {})
     await _setup(hass)
 
     root = await async_browse_media(hass, f"media-source://{DOMAIN}")
-    titles = [child.title for child in root.children]
+    assert root.title == "DR"
+    assert [c.title for c in root.children] == ["DR TV", "DR Radio"]
+
+
+async def test_media_source_tv(hass: HomeAssistant, mock_dr_api) -> None:
+    assert await async_setup_component(hass, "media_source", {})
+    await _setup(hass)
+
+    tv = await async_browse_media(hass, f"media-source://{DOMAIN}/tv")
+    titles = [child.title for child in tv.children]
     assert "DR1: TV Avisen" in titles
     assert len(titles) == len(FALLBACK_CHANNELS)
     # Every tile has a picture, without quotes (they break the frontend's CSS).
-    assert all(c.thumbnail and "'" not in c.thumbnail for c in root.children)
+    assert all(c.thumbnail and "'" not in c.thumbnail for c in tv.children)
 
-    resolved = await async_resolve_media(hass, f"media-source://{DOMAIN}/20876", None)
-    assert resolved.url == FALLBACK_CHANNELS["20876"]["stream_url"]
-    assert resolved.mime_type == "application/x-mpegURL"
+    for media_id in ("tv/20876", "20876"):  # "20876" is the pre-radio form
+        resolved = await async_resolve_media(
+            hass, f"media-source://{DOMAIN}/{media_id}", None
+        )
+        assert resolved.url == FALLBACK_CHANNELS["20876"]["stream_url"]
+        assert resolved.mime_type == "application/x-mpegURL"
+
+
+async def test_media_source_radio(hass: HomeAssistant, mock_dr_api) -> None:
+    assert await async_setup_component(hass, "media_source", {})
+    await _setup(hass)
+
+    radio = await async_browse_media(hass, f"media-source://{DOMAIN}/radio")
+    # Sorted by DR's order; P4's regions are one folder; feeds without an
+    # MP3 stream are left out.
+    assert [(c.title, c.can_play, c.can_expand) for c in radio.children] == [
+        ("P1", True, False),
+        ("P4", False, True),
+    ]
+    p1 = radio.children[0]
+    assert p1.thumbnail == "https://asset.dr.dk/drlyd/images/urn:dr:radio:image:p1"
+
+    p4 = await async_browse_media(hass, f"media-source://{DOMAIN}/radio/group/p4")
+    assert [c.title for c in p4.children] == ["P4 Fyn", "P4 København"]
+    # A region without its own image uses P4's.
+    assert p4.children[0].thumbnail.endswith("urn:dr:radio:image:p4")
+    assert p4.children[1].thumbnail.endswith("urn:dr:radio:image:p4kbh")
+
+    resolved = await async_resolve_media(
+        hass, f"media-source://{DOMAIN}/radio/p4fyn", None
+    )
+    # The highest-bitrate MP3 stream.
+    assert resolved.url == "https://live-icy.dr.dk/A/A07H.mp3"
+    assert resolved.mime_type == "audio/mpeg"
+
+
+async def test_media_source_radio_fallback(hass: HomeAssistant, mock_dr_api) -> None:
+    mock_dr_api.clear_requests()
+    for channel_id in FALLBACK_CHANNELS:
+        mock_dr_api.get(
+            f"{API_BASE}/items/{channel_id}", json=channel_payload(channel_id)
+        )
+    mock_dr_api.get(f"{API_BASE}/schedules", json=schedule_payload())
+    mock_dr_api.get(RADIO_API_URL, status=500)
+    assert await async_setup_component(hass, "media_source", {})
+    await _setup(hass)
+
+    radio = await async_browse_media(hass, f"media-source://{DOMAIN}/radio")
+    titles = [c.title for c in radio.children]
+    assert titles[:5] == ["LYD ekstra", "LYD ekstra 2", "P1", "P2", "P3"]
+    assert "P4" in titles and "P5" in titles
+    resolved = await async_resolve_media(
+        hass, f"media-source://{DOMAIN}/radio/p1", None
+    )
+    assert resolved.url == next(r[2] for r in FALLBACK_RADIO if r[0] == "p1")
+
+
+async def test_media_source_unknown(hass: HomeAssistant, mock_dr_api) -> None:
+    assert await async_setup_component(hass, "media_source", {})
+    await _setup(hass)
+    for media_id in ("radio/nope", "tv/nope", "radio/group/p4"):
+        with pytest.raises(Unresolvable):
+            await async_resolve_media(hass, f"media-source://{DOMAIN}/{media_id}", None)
+    with pytest.raises(BrowseError):
+        await async_browse_media(hass, f"media-source://{DOMAIN}/radio/group/nope")
