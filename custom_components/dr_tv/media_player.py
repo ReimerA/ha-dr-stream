@@ -145,7 +145,8 @@ class DRTVMediaPlayer(
 
     @property
     def state(self) -> MediaPlayerState:
-        return MediaPlayerState.PLAYING if self._is_on else MediaPlayerState.OFF
+        # "on", not "playing": this entity selects a channel, it plays nothing.
+        return MediaPlayerState.ON if self._is_on else MediaPlayerState.OFF
 
     @property
     def source_list(self) -> list[str]:

@@ -14,7 +14,7 @@ from homeassistant.components.media_source import (
     async_browse_media,
     async_resolve_media,
 )
-from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_PLAYING
+from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
@@ -60,7 +60,7 @@ async def test_media_player(hass: HomeAssistant, mock_dr_api) -> None:
     await _setup(hass)
 
     state = hass.states.get(ENTITY_ID)
-    assert state.state == STATE_PLAYING
+    assert state.state == STATE_ON
     assert state.attributes[ATTR_INPUT_SOURCE] == "DR1"
     assert state.attributes[ATTR_INPUT_SOURCE_LIST] == [
         c["title"] for c in FALLBACK_CHANNELS.values()
@@ -97,7 +97,7 @@ async def test_dr_down_uses_fallback_and_raises_issue(
     coordinator = entry.runtime_data
 
     state = hass.states.get(ENTITY_ID)
-    assert state.state == STATE_PLAYING
+    assert state.state == STATE_ON
     assert state.attributes[ATTR_INPUT_SOURCE] == "DR1"
     assert state.attributes[ATTR_MEDIA_TITLE] == "DR1"
     assert state.attributes["stream_url"] == FALLBACK_CHANNELS["20875"]["stream_url"]
