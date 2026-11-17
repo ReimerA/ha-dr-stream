@@ -1,0 +1,14 @@
+# Local Home Assistant for developing the integration.
+#   docker compose up -d   ->  http://localhost:8123
+# Restart the container after code changes: docker compose restart
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: ha-dr-tv-dev
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./config:/config
+      - ./custom_components:/config/custom_components:ro
+    environment:
+      - TZ=Europe/Copenhagen

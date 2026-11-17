@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Adds a DR TV media player with DR's live channels and what is on air, and lists the channels in the Media panel."
+      }
+    },
+    "abort": {
+      "already_configured": "DR TV is already set up.",
+      "single_instance_allowed": "DR TV is already set up."
+    }
+  },
+  "issues": {
+    "api_unavailable": {
+      "title": "DR TV cannot reach DR",
+      "description": "Home Assistant has not been able to fetch the programme schedule from DR for a while. The channels and streams still work, but programme titles and images may be missing or out of date. This notice disappears by itself once DR responds again.\n\nLast error: {error}"
+    }
+  }
+}
