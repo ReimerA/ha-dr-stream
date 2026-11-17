@@ -325,6 +325,6 @@ if (!customElements.get("dr-tv-card")) {
     type: "dr-tv-card",
     name: "DR TV",
     description: "Watch DR's live channels and see what's on.",
-    documentationURL: "https://github.com/OWNER/ha-dr-stream",
+    documentationURL: "https://github.com/ReimerA/ha-dr-stream",
   });
 }

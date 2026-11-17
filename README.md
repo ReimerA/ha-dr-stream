@@ -33,8 +33,11 @@ The integration has no entities. A TV channel isn't a device with a state.
 ## Install
 
 ### HACS (custom repository)
-1. HACS → ⋮ → Custom repositories → add this repo's URL, type *Integration*.
-2. Install **DR TV** and restart Home Assistant.
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ReimerA&repository=ha-dr-stream&category=integration)
+
+Or by hand:
+1. HACS → ⋮ → Custom repositories → add `https://github.com/ReimerA/ha-dr-stream`, type *Integration*.
+2. Install **DR TV & Radio** and restart Home Assistant.
 
 ### Manual
 Copy `custom_components/dr_tv` into your Home Assistant `config/custom_components/`

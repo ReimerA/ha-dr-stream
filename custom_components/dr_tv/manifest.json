@@ -1,13 +1,13 @@
 {
   "domain": "dr_tv",
   "name": "DR TV & Radio",
-  "codeowners": [],
+  "codeowners": ["@ReimerA"],
   "config_flow": true,
   "dependencies": ["frontend", "http", "media_source", "websocket_api"],
-  "documentation": "https://github.com/OWNER/ha-dr-stream",
+  "documentation": "https://github.com/ReimerA/ha-dr-stream",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/OWNER/ha-dr-stream/issues",
+  "issue_tracker": "https://github.com/ReimerA/ha-dr-stream/issues",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.3.0"
