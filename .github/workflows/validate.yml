@@ -26,6 +26,3 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # "brands" wants a logo in home-assistant/brands. Remove this line
-          # once logos are added (needed for the HACS default list).
-          ignore: brands
