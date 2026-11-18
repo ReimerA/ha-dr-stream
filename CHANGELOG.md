@@ -5,6 +5,13 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-18
+
+First public release, installable through HACS as a custom repository.
+It includes everything from the earlier, unpublished versions (see
+CHANGELOG.md): DR TV and DR Radio in the Media panel, and the DR TV
+dashboard card (`custom:dr-tv-card`).
+
 ### Added
 - Apache-2.0 license.
 - GitHub Actions: tests and lint, Home Assistant (hassfest) and HACS
