@@ -7,6 +7,8 @@ on:
   schedule:
     # Weekly: catches new Home Assistant/HACS rules even without code changes.
     - cron: "0 6 * * 1"
+  # "Run workflow" button, e.g. after changing the repo's description/topics.
+  workflow_dispatch:
   workflow_call:
 
 jobs:
