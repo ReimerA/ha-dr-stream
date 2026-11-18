@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 - Apache-2.0 license.
 - GitHub Actions: tests and lint, Home Assistant (hassfest) and HACS
   validation, tagged releases, and a daily check of DR's live API.
+- Integration categories (TV streaming, music & radio services) in the
+  manifest.
 
 ## [0.3.0]
 
