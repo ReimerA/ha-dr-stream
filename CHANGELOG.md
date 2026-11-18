@@ -5,6 +5,8 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-18
+
 ### Changed
 - The DR TV and DR Radio folders in the Media panel show DR's "DR TV" and
   "DR LYD" logos instead of a plain folder.
