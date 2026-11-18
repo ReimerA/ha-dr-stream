@@ -103,8 +103,9 @@ class DRTVMediaSource(MediaSource):
             "DR",
             MediaClass.DIRECTORY,
             [
-                _folder(TV, "DR TV", MediaClass.CHANNEL),
-                _folder(RADIO, "DR Radio", MediaClass.MUSIC),
+                # media_class picks the tile's icon: a TV and a music note.
+                _folder(TV, "DR TV", MediaClass.CHANNEL, icon=MediaClass.CHANNEL),
+                _folder(RADIO, "DR Radio", MediaClass.MUSIC, icon=MediaClass.MUSIC),
             ],
         )
 
@@ -166,11 +167,12 @@ def _folder(
     title: str,
     children_class: MediaClass,
     children: list[BrowseMediaSource] | None = None,
+    icon: MediaClass = MediaClass.DIRECTORY,
 ) -> BrowseMediaSource:
     return BrowseMediaSource(
         domain=DOMAIN,
         identifier=identifier,
-        media_class=MediaClass.DIRECTORY,
+        media_class=icon,
         media_content_type=MediaType.CHANNELS,
         title=title,
         can_play=False,
