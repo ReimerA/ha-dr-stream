@@ -27,7 +27,7 @@ from homeassistant.components.media_source import (
 from homeassistant.core import HomeAssistant
 
 from .api import Channel, RadioStation
-from .const import DOMAIN
+from .const import DOMAIN, FRONTEND_URL
 from .coordinator import DRTVConfigEntry, DRTVData, fallback_channels, fallback_radio
 
 # The frontend only uses its HLS player for exactly this spelling; the more
@@ -37,6 +37,11 @@ HLS_MIME_TYPE = "application/x-mpegURL"
 TV = "tv"
 RADIO = "radio"
 RADIO_GROUP = "radio/group/"
+
+# DR's own "DR TV" and "DR LYD" logos for the two top folders, served from
+# the integration's frontend folder.
+TV_LOGO = f"{FRONTEND_URL}/drtv.png"
+RADIO_LOGO = f"{FRONTEND_URL}/drlyd.png"
 
 
 async def async_get_media_source(hass: HomeAssistant) -> DRTVMediaSource:
@@ -103,9 +108,8 @@ class DRTVMediaSource(MediaSource):
             "DR",
             MediaClass.DIRECTORY,
             [
-                # media_class picks the tile's icon: a TV and a music note.
-                _folder(TV, "DR TV", MediaClass.CHANNEL, icon=MediaClass.CHANNEL),
-                _folder(RADIO, "DR Radio", MediaClass.MUSIC, icon=MediaClass.MUSIC),
+                _folder(TV, "DR TV", MediaClass.CHANNEL, thumbnail=TV_LOGO),
+                _folder(RADIO, "DR Radio", MediaClass.MUSIC, thumbnail=RADIO_LOGO),
             ],
         )
 
@@ -141,13 +145,14 @@ class DRTVMediaSource(MediaSource):
                 # Regional channels (P4, P5) become one folder each, in the
                 # position of their first region.
                 groups_seen.add(station.group_id)
-                folder = _folder(
-                    f"{RADIO_GROUP}{station.group_id}",
-                    station.group_title or station.group_id,
-                    MediaClass.MUSIC,
+                children.append(
+                    _folder(
+                        f"{RADIO_GROUP}{station.group_id}",
+                        station.group_title or station.group_id,
+                        MediaClass.MUSIC,
+                        thumbnail=station.logo,
+                    )
                 )
-                folder.thumbnail = station.logo
-                children.append(folder)
         return _folder(RADIO, "DR Radio", MediaClass.MUSIC, children)
 
     def _browse_radio_group(self, group_id: str) -> BrowseMediaSource:
@@ -167,18 +172,19 @@ def _folder(
     title: str,
     children_class: MediaClass,
     children: list[BrowseMediaSource] | None = None,
-    icon: MediaClass = MediaClass.DIRECTORY,
+    thumbnail: str | None = None,
 ) -> BrowseMediaSource:
     return BrowseMediaSource(
         domain=DOMAIN,
         identifier=identifier,
-        media_class=icon,
+        media_class=MediaClass.DIRECTORY,
         media_content_type=MediaType.CHANNELS,
         title=title,
         can_play=False,
         can_expand=True,
         children_media_class=children_class,
         children=children,
+        thumbnail=thumbnail,
     )
 
 

@@ -120,6 +120,7 @@ major number for changes that require users to do something.
 Apache License 2.0; see [LICENSE](LICENSE). The bundled hls.js is also
 Apache-2.0 ([its license](custom_components/dr_tv/frontend/hls.js-LICENSE)).
 
-This project is not affiliated with or endorsed by DR. The DR logo in
-`custom_components/dr_tv/brand/` is DR's trademark and is used only to
-identify the service; it is not covered by this project's license.
+This project is not affiliated with or endorsed by DR. The DR, DR TV and DR LYD logos
+(`custom_components/dr_tv/brand/`, `frontend/drtv.png`, `frontend/drlyd.png`)
+are DR's trademarks and are used only to identify the service; they are not covered by this
+project's license.

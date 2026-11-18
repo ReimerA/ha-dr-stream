@@ -169,13 +169,19 @@ async def test_migration_removes_old_media_player(
     assert dev_reg.async_get(device.id) is None
 
 
-async def test_media_source_root(hass: HomeAssistant, mock_dr_api) -> None:
+async def test_media_source_root(hass: HomeAssistant, mock_dr_api, hass_client) -> None:
     assert await async_setup_component(hass, "media_source", {})
     await _setup(hass)
 
     root = await async_browse_media(hass, f"media-source://{DOMAIN}")
     assert root.title == "DR"
     assert [c.title for c in root.children] == ["DR TV", "DR Radio"]
+    # The DR TV and DR LYD logos on the two folders are served by us.
+    client = await hass_client()
+    for child in root.children:
+        resp = await client.get(child.thumbnail)
+        assert resp.status == 200, child.thumbnail
+        assert resp.content_type == "image/png"
 
 
 async def test_media_source_tv(hass: HomeAssistant, mock_dr_api) -> None:

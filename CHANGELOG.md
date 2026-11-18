@@ -6,8 +6,8 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 ## [Unreleased]
 
 ### Changed
-- The DR TV and DR Radio folders in the Media panel show a TV and a music
-  icon instead of a plain folder.
+- The DR TV and DR Radio folders in the Media panel show DR's "DR TV" and
+  "DR LYD" logos instead of a plain folder.
 
 ## [0.4.1] - 2026-11-18
 
