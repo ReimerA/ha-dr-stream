@@ -5,6 +5,8 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-18
+
 ### Changed (breaking)
 - The integration's internal name is now `dr` instead of `dr_tv`, because it
   covers radio too. Home Assistant sees it as a new integration: delete DR TV
