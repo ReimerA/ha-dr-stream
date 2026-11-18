@@ -5,6 +5,8 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-18
+
 ### Added
 - The DR logo for the integration, shown in Settings → Integrations, the
   Media panel and HACS/Marketplace (Home Assistant 2026.3 or newer).
