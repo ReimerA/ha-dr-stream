@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 import logging
 
@@ -149,7 +149,10 @@ class DRTVCoordinator(DataUpdateCoordinator[DRTVData]):
         ok = 0
         for channel_id, result in zip(ids, results, strict=True):
             if isinstance(result, Channel):
-                self._channels[channel_id] = result
+                # DR's API has no stable short name; keep our own.
+                self._channels[channel_id] = replace(
+                    result, slug=FALLBACK_CHANNELS[channel_id]["slug"]
+                )
                 ok += 1
             else:
                 _LOGGER.debug(

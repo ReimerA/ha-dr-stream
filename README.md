@@ -21,9 +21,8 @@ Assistant, without scripts, helpers or YAML.
     stations. DR's radio schedule needs an API key, so stations show their
     name and logo but not the current programme.
 
-  To start one from an automation, use `media_player.play_media` with
-  `media-source://dr_tv/tv/20875` (DR1) or `media-source://dr_tv/radio/p1` (P1).
-  The older `media-source://dr_tv/20875` form still works.
+  Every channel and station has a link you can use in automations; see
+  [Playing from an automation](#playing-from-an-automation).
 - **Resilience.** If DR's API is down, the last known data or the built-in
   channel and station lists are kept, so streams keep working. After repeated failures a
   repair notice appears under Settings → Repairs, and it clears by itself.
@@ -40,10 +39,10 @@ Or by hand:
 2. Install **DR TV & Radio** and restart Home Assistant.
 
 ### Manual
-Copy `custom_components/dr_tv` into your Home Assistant `config/custom_components/`
+Copy `custom_components/dr` into your Home Assistant `config/custom_components/`
 and restart.
 
-Then go to **Settings → Devices & services → Add integration → DR TV**.
+Then go to **Settings → Devices & services → Add integration → DR TV & Radio**.
 There's nothing to configure.
 
 ## The card
@@ -52,9 +51,50 @@ Edit a dashboard → **Add card** → search for **DR TV**, or in YAML:
 
 ```yaml
 type: custom:dr-tv-card
-channel: DR1      # optional: the channel selected when the card loads
+channel: dr1      # optional: the channel selected when the card loads
 autoplay: false   # optional: start playing (muted, as browsers require)
 ```
+
+## Playing from an automation
+
+Use `media_player.play_media` with a `media-source://dr/...` link. `tv/` is
+followed by the channel and `radio/` by the station:
+
+```yaml
+action: media_player.play_media
+target:
+  entity_id: media_player.living_room
+data:
+  media_content_id: media-source://dr/radio/p1
+  media_content_type: music     # use "video" for TV
+```
+
+| TV | Link |
+|---|---|
+| DR1 | `media-source://dr/tv/dr1` |
+| DR2 | `media-source://dr/tv/dr2` |
+| DR Ramasjang | `media-source://dr/tv/ramasjang` |
+| TVA Live | `media-source://dr/tv/tva` |
+| DRTV Ekstra | `media-source://dr/tv/drtv-ekstra` |
+
+Radio stations use DR's own short names: `p1`, `p2`, `p3`, `p6beat`, `p8jazz`,
+and for the regions e.g. `p4kbh` or `p4fyn`. The easiest way to find a link is
+to pick the station in the Media panel while editing the action in the
+automation editor, which fills it in for you.
+
+## Upgrading from 0.4.x
+
+Version 0.5.0 renamed the integration's internal name from `dr_tv` to `dr`
+(it now does radio too), so Home Assistant sees it as a new integration:
+
+1. Settings → Devices & services → **DR TV & Radio** → ⋮ → **Delete**.
+2. In HACS, open **DR TV & Radio** → ⋮ → **Remove**, then **Download** it
+   again. (A plain update would leave the old `dr_tv` folder behind.)
+3. Restart Home Assistant, then Settings → Devices & services →
+   **Add integration** → **DR TV & Radio**.
+4. Change links in automations and scripts from `media-source://dr_tv/...` to
+   `media-source://dr/...`, using the new TV names above (`tv/dr1` instead of
+   `tv/20875`). Dashboard cards need no change.
 
 ## How it works
 
@@ -62,11 +102,11 @@ autoplay: false   # optional: start playing (muted, as browsers require)
 |---|---|
 | `api.py` | Talks to DR's TV API (`production-cdn.dr-massive.com`) and radio API (`api.dr.dk/radio/v4/channels`). No Home Assistant code, so it's easy to test on its own. |
 | `coordinator.py` | A `DataUpdateCoordinator`: fetches the TV schedule every 5 minutes and TV channels and radio stations every 6 hours, keeps the last data on errors, and raises or clears the repair issue. |
-| `websocket.py` | The `dr_tv/channels` websocket command the card uses: channels, now, next and stream URLs. |
+| `websocket.py` | The `dr/channels` websocket command the card uses: channels, now, next and stream URLs. |
 | `frontend/dr-tv-card.js` | The card: plain JavaScript, no build step. It plays video with hls.js, or natively on Safari and iOS. |
 | `frontend/hls.min.js` | [hls.js](https://github.com/video-dev/hls.js) 1.7.4 (Apache-2.0), bundled so nothing loads from a CDN. |
 | `media_source.py` | The DR entry in the Media panel: DR TV (HLS video) and DR Radio (MP3), with P4 and P5 regions as folders. |
-| `__init__.py` | Serves the card, registers it on all dashboards, and migrates old installs (removes the v0.1 media player). |
+| `__init__.py` | Serves the card and registers it on all dashboards. |
 | `config_flow.py` | Lets you add the integration from the UI. |
 
 DR's API is unofficial and undocumented. It needs no login, but it may change.
@@ -104,7 +144,7 @@ HACS offers new versions to users from GitHub releases.
 
 1. Move the items under `[Unreleased]` in `CHANGELOG.md` into a new
    `## [x.y.z]` section.
-2. Set the same `"version": "x.y.z"` in `custom_components/dr_tv/manifest.json`.
+2. Set the same `"version": "x.y.z"` in `custom_components/dr/manifest.json`.
 3. Commit, then tag and push: `git tag vx.y.z && git push origin main vx.y.z`.
 
 The release workflow runs all checks, verifies that the tag, manifest and
@@ -118,9 +158,9 @@ major number for changes that require users to do something.
 ## License
 
 Apache License 2.0; see [LICENSE](LICENSE). The bundled hls.js is also
-Apache-2.0 ([its license](custom_components/dr_tv/frontend/hls.js-LICENSE)).
+Apache-2.0 ([its license](custom_components/dr/frontend/hls.js-LICENSE)).
 
 This project is not affiliated with or endorsed by DR. The DR, DR TV and DR LYD logos
-(`custom_components/dr_tv/brand/`, `frontend/drtv.png`, `frontend/drlyd.png`)
+(`custom_components/dr/brand/`, `frontend/drtv.png`, `frontend/drlyd.png`)
 are DR's trademarks and are used only to identify the service; they are not covered by this
 project's license.

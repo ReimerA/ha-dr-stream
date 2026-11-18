@@ -6,13 +6,13 @@
       }
     },
     "abort": {
-      "already_configured": "DR TV is already set up.",
-      "single_instance_allowed": "DR TV is already set up."
+      "already_configured": "DR TV & Radio is already set up.",
+      "single_instance_allowed": "DR TV & Radio is already set up."
     }
   },
   "issues": {
     "api_unavailable": {
-      "title": "DR TV cannot reach DR",
+      "title": "DR TV & Radio cannot reach DR",
       "description": "Home Assistant has not been able to fetch the programme schedule from DR for a while. The channels and streams still work, but programme titles and images may be missing or out of date. This notice disappears by itself once DR responds again.\n\nLast error: {error}"
     }
   }

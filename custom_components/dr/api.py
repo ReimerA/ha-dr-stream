@@ -23,11 +23,12 @@ class DRTVError(Exception):
 class Channel:
     """A DR live channel."""
 
-    id: str
+    id: str  # DR's id, used for its APIs
     title: str
     stream_url: str
     stream_url_subtitles: str | None = None
     logo: str | None = None
+    slug: str = ""  # readable id for media-source links, e.g. "dr1"
 
 
 @dataclass(frozen=True, slots=True)

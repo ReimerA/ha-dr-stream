@@ -5,6 +5,17 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+### Changed (breaking)
+- The integration's internal name is now `dr` instead of `dr_tv`, because it
+  covers radio too. Home Assistant sees it as a new integration: delete DR TV
+  & Radio, remove and re-download it in HACS, restart and add it again. See "Upgrading from 0.4.x" in
+  the README.
+- Media links are now `media-source://dr/tv/dr1` and
+  `media-source://dr/radio/p1`. TV channels use readable names (`dr1`, `dr2`,
+  `ramasjang`, `tva`, `drtv-ekstra`) instead of DR's numbers, and the old
+  `media-source://dr_tv/...` forms no longer work.
+- The card's `channel:` option also accepts these names (`channel: dr1`).
+
 ## [0.4.2] - 2026-11-18
 
 ### Changed

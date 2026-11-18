@@ -1,14 +1,14 @@
-"""Constants for the DR TV integration."""
+"""Constants for the DR TV & Radio integration."""
 
 from __future__ import annotations
 
 from datetime import timedelta
 from typing import Final
 
-DOMAIN: Final = "dr_tv"
+DOMAIN: Final = "dr"
 
 # Where the dashboard card (and hls.js) are served from.
-FRONTEND_URL: Final = "/dr_tv"
+FRONTEND_URL: Final = "/dr"
 
 API_BASE: Final = "https://production-cdn.dr-massive.com/api"
 API_PARAMS: Final = {
@@ -33,22 +33,27 @@ ISSUE_API_UNAVAILABLE: Final = "api_unavailable"
 # streams keep working, only the programme info is missing.
 FALLBACK_CHANNELS: Final[dict[str, dict[str, str]]] = {
     "20875": {
+        "slug": "dr1",
         "title": "DR1",
         "stream_url": "https://drlivedr1hls.akamaized.net/hls/live/2113625/drlivedr1/master.m3u8",
     },
     "20876": {
+        "slug": "dr2",
         "title": "DR2",
         "stream_url": "https://drlivedr2hls.akamaized.net/hls/live/2113623/drlivedr2/master.m3u8",
     },
     "20892": {
+        "slug": "ramasjang",
         "title": "DR Ramasjang",
         "stream_url": "https://drlivedrrhls.akamaized.net/hls/live/2113621/drlivedrr/master.m3u8",
     },
     "192099": {
+        "slug": "tva",
         "title": "TVA Live",
         "stream_url": "https://drlivedrtvahls.akamaized.net/hls/live/2113613/drlivedrtva/master.m3u8",
     },
     "192100": {
+        "slug": "drtv-ekstra",
         "title": "DRTV Ekstra",
         "stream_url": "https://drlivedrtvbhls.akamaized.net/hls/live/2113611/drlivedrtvb/master.m3u8",
     },

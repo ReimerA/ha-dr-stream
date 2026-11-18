@@ -42,7 +42,7 @@ def ws_channels(
     """Return DR's live channels with what is on now and next."""
     entries: list[DRTVConfigEntry] = hass.config_entries.async_loaded_entries(DOMAIN)
     if not entries:
-        connection.send_error(msg["id"], "not_loaded", "DR TV is not set up")
+        connection.send_error(msg["id"], "not_loaded", "DR TV & Radio is not set up")
         return
     data = entries[0].runtime_data.data
     now = dt_util.utcnow()
@@ -52,6 +52,7 @@ def ws_channels(
             "channels": [
                 {
                     "id": channel.id,
+                    "slug": channel.slug,
                     "title": channel.title,
                     "logo": channel.logo,
                     "stream_url": channel.stream_url,

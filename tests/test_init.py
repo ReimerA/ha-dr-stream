@@ -12,15 +12,13 @@ from homeassistant.components.media_source import (
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import (
-    device_registry as dr,
-    entity_registry as er,
     issue_registry as ir,
 )
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.dr_tv.const import (
+from custom_components.dr.const import (
     API_BASE,
     DOMAIN,
     FAILURES_BEFORE_ISSUE,
@@ -33,10 +31,8 @@ from custom_components.dr_tv.const import (
 from .conftest import channel_payload, radio_payload, schedule_payload
 
 
-async def _setup(hass: HomeAssistant, version: int = 2) -> MockConfigEntry:
-    entry = MockConfigEntry(
-        domain=DOMAIN, title="DR TV", unique_id=DOMAIN, version=version
-    )
+async def _setup(hass: HomeAssistant) -> MockConfigEntry:
+    entry = MockConfigEntry(domain=DOMAIN, title="DR", unique_id=DOMAIN)
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -45,7 +41,7 @@ async def _setup(hass: HomeAssistant, version: int = 2) -> MockConfigEntry:
 
 async def _channels(hass: HomeAssistant, hass_ws_client) -> dict[str, dict]:
     client = await hass_ws_client(hass)
-    await client.send_json_auto_id({"type": "dr_tv/channels"})
+    await client.send_json_auto_id({"type": "dr/channels"})
     msg = await client.receive_json()
     assert msg["success"], msg
     return {c["title"]: c for c in msg["result"]["channels"]}
@@ -74,6 +70,7 @@ async def test_channels_websocket(
     assert list(channels) == [c["title"] for c in FALLBACK_CHANNELS.values()]
     dr1 = channels["DR1"]
     assert dr1["stream_url"] == FALLBACK_CHANNELS["20875"]["stream_url"]
+    assert dr1["slug"] == "dr1"
     assert dr1["now"]["title"] == "TV Avisen"
     assert dr1["next"]["title"] == "Aftenshowet"
     assert "Width=640&Height=360" in dr1["now"]["image"]
@@ -91,7 +88,7 @@ async def test_channels_websocket_not_loaded(
 ) -> None:
     assert await async_setup_component(hass, DOMAIN, {})
     client = await hass_ws_client(hass)
-    await client.send_json_auto_id({"type": "dr_tv/channels"})
+    await client.send_json_auto_id({"type": "dr/channels"})
     msg = await client.receive_json()
     assert not msg["success"]
     assert msg["error"]["code"] == "not_loaded"
@@ -100,7 +97,7 @@ async def test_channels_websocket_not_loaded(
 async def test_card_is_served(hass: HomeAssistant, mock_dr_api, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
-    for path in ("/dr_tv/dr-tv-card.js", "/dr_tv/hls.min.js"):
+    for path in ("/dr/dr-tv-card.js", "/dr/hls.min.js"):
         resp = await client.get(path)
         assert resp.status == 200, path
 
@@ -143,32 +140,6 @@ async def test_dr_down_uses_fallback_and_raises_issue(
     assert channels["DR1"]["now"]["title"] == "TV Avisen"
 
 
-async def test_migration_removes_old_media_player(
-    hass: HomeAssistant, mock_dr_api
-) -> None:
-    entry = MockConfigEntry(domain=DOMAIN, title="DR TV", unique_id=DOMAIN, version=1)
-    entry.add_to_hass(hass)
-    dev_reg = dr.async_get(hass)
-    device = dev_reg.async_get_or_create(
-        config_entry_id=entry.entry_id, identifiers={(DOMAIN, entry.entry_id)}
-    )
-    ent_reg = er.async_get(hass)
-    ent_reg.async_get_or_create(
-        "media_player",
-        DOMAIN,
-        f"{entry.entry_id}_player",
-        config_entry=entry,
-        device_id=device.id,
-    )
-
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-
-    assert entry.version == 2
-    assert er.async_entries_for_config_entry(ent_reg, entry.entry_id) == []
-    assert dev_reg.async_get(device.id) is None
-
-
 async def test_media_source_root(hass: HomeAssistant, mock_dr_api, hass_client) -> None:
     assert await async_setup_component(hass, "media_source", {})
     await _setup(hass)
@@ -191,11 +162,13 @@ async def test_media_source_tv(hass: HomeAssistant, mock_dr_api) -> None:
     tv = await async_browse_media(hass, f"media-source://{DOMAIN}/tv")
     titles = [child.title for child in tv.children]
     assert "DR1: TV Avisen" in titles
+    # Links use readable channel names, not DR's numeric ids.
+    assert "tv/dr1" in [child.identifier for child in tv.children]
     assert len(titles) == len(FALLBACK_CHANNELS)
     # Every tile has a picture, without quotes (they break the frontend's CSS).
     assert all(c.thumbnail and "'" not in c.thumbnail for c in tv.children)
 
-    for media_id in ("tv/20876", "20876"):  # "20876" is the pre-radio form
+    for media_id in ("tv/dr2",):
         resolved = await async_resolve_media(
             hass, f"media-source://{DOMAIN}/{media_id}", None
         )

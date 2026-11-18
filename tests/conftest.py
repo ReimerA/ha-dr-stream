@@ -1,4 +1,4 @@
-"""Fixtures for DR TV tests."""
+"""Fixtures for DR TV & Radio tests."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 import pytest
 
-from custom_components.dr_tv.const import API_BASE, FALLBACK_CHANNELS, RADIO_API_URL
+from custom_components.dr.const import API_BASE, FALLBACK_CHANNELS, RADIO_API_URL
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 

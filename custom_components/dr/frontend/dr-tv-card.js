@@ -3,16 +3,16 @@
  *
  * Shows DR's live channels with what is on now, and plays the selected
  * channel inside the card. Data comes from the integration's websocket
- * command `dr_tv/channels`; video is played with hls.js (bundled with the
+ * command `dr/channels`; video is played with hls.js (bundled with the
  * integration) or natively where the browser supports HLS (Safari, iOS).
  *
  *   type: custom:dr-tv-card
- *   channel: DR1        # optional: channel selected at start (name or id)
+ *   channel: dr1        # optional: channel selected at start (id or name)
  *   autoplay: false     # optional: start playing (muted) when shown
  */
 
 const VERSION = new URL(import.meta.url).searchParams.get("v") || "dev";
-const HLS_URL = `/dr_tv/hls.min.js?v=${VERSION}`;
+const HLS_URL = `/dr/hls.min.js?v=${VERSION}`;
 const REFRESH_MS = 60_000;
 
 let hlsPromise;
@@ -88,19 +88,20 @@ class DrTvCard extends HTMLElement {
   async _refresh() {
     if (!this._hass || !this.isConnected) return;
     try {
-      const { channels } = await this._hass.callWS({ type: "dr_tv/channels" });
+      const { channels } = await this._hass.callWS({ type: "dr/channels" });
       this._channels = channels;
       this._error = undefined;
     } catch (err) {
       this._error =
         err?.code === "unknown_command" || err?.code === "not_loaded"
-          ? "DR TV is not set up. Add it under Settings → Devices & services."
+          ? "DR TV & Radio is not set up. Add it under Settings → Devices & services."
           : `Could not load DR channels: ${err?.message ?? err}`;
     }
     if (this._selectedId === undefined && this._channels?.length) {
       const wanted = String(this._config.channel ?? "").toLowerCase();
       const match = this._channels.find(
-        (c) => c.id === wanted || c.title.toLowerCase() === wanted
+        (c) =>
+          c.slug === wanted || c.id === wanted || c.title.toLowerCase() === wanted
       );
       this._selectedId = (match ?? this._channels[0]).id;
       if (this._config.autoplay) this._play(true);

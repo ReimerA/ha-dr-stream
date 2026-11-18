@@ -1,1 +1,1 @@
-"""Tests for the DR TV integration."""
+"""Tests for the DR TV & Radio integration."""

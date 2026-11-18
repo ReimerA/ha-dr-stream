@@ -1,10 +1,10 @@
 """DR's live TV channels and radio stations in Home Assistant's Media panel.
 
-Layout (media-source://dr_tv/<identifier>):
+Layout (media-source://dr/<identifier>):
 
     DR                      ""
     ├── DR TV               "tv"
-    │   └── DR1 …           "tv/20875"
+    │   └── DR1 …           "tv/dr1"
     └── DR Radio            "radio"
         ├── P1 …            "radio/p1"
         └── P4              "radio/group/p4"
@@ -70,6 +70,9 @@ class DRTVMediaSource(MediaSource):
         data = self._data()
         return data.channels if data else fallback_channels()
 
+    def _channel_by_slug(self, slug: str) -> Channel | None:
+        return next((c for c in self._channels().values() if c.slug == slug), None)
+
     def _radio(self) -> dict[str, RadioStation]:
         data = self._data()
         return data.radio if data and data.radio else fallback_radio()
@@ -79,9 +82,7 @@ class DRTVMediaSource(MediaSource):
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         """Turn a channel or station into its stream."""
         kind, _, item_id = (item.identifier or "").rpartition("/")
-        # "20875" without a prefix is how TV channels were addressed before
-        # radio was added; keep it working for existing automations.
-        if kind in ("", TV) and (channel := self._channels().get(item_id)):
+        if kind == TV and (channel := self._channel_by_slug(item_id)):
             return PlayMedia(channel.stream_url, HLS_MIME_TYPE)
         if kind == RADIO and (station := self._radio().get(item_id)):
             return PlayMedia(station.stream_url, station.mime_type)
@@ -124,7 +125,7 @@ class DRTVMediaSource(MediaSource):
             children.append(
                 BrowseMediaSource(
                     domain=DOMAIN,
-                    identifier=f"{TV}/{channel.id}",
+                    identifier=f"{TV}/{channel.slug}",
                     media_class=MediaClass.CHANNEL,
                     media_content_type=MediaType.CHANNEL,
                     title=title,

@@ -27,7 +27,7 @@ jobs:
       - name: Check tag, manifest version and changelog agree
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          manifest=$(python3 -c "import json; print(json.load(open('custom_components/dr_tv/manifest.json'))['version'])")
+          manifest=$(python3 -c "import json; print(json.load(open('custom_components/dr/manifest.json'))['version'])")
           if [ "$tag" != "$manifest" ]; then
             echo "::error::Tag v$tag does not match manifest.json version $manifest"
             exit 1

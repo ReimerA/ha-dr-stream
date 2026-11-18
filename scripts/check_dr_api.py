@@ -15,8 +15,8 @@ import aiohttp
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from custom_components.dr_tv.api import DRTVClient
-from custom_components.dr_tv.const import (
+from custom_components.dr.api import DRTVClient
+from custom_components.dr.const import (
     FALLBACK_CHANNELS,
     FALLBACK_RADIO,
 )
