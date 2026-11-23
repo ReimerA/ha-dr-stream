@@ -45,7 +45,7 @@ FALLBACK_CHANNELS: Final[dict[str, dict[str, str]]] = {
     "20892": {
         "slug": "ramasjang",
         "title": "DR Ramasjang",
-        "stream_url": "https://drlivedrrhls.akamaized.net/hls/live/2113621/drlivedrr/master.m3u8",
+        "stream_url": "https://drlivedrr-hls.akamaized.net/hls/live/20002976/drlivedrr/master.m3u8",
     },
     "192099": {
         "slug": "tva",
@@ -55,7 +55,7 @@ FALLBACK_CHANNELS: Final[dict[str, dict[str, str]]] = {
     "192100": {
         "slug": "drtv-ekstra",
         "title": "DRTV Ekstra",
-        "stream_url": "https://drlivedrtvbhls.akamaized.net/hls/live/2113611/drlivedrtvb/master.m3u8",
+        "stream_url": "https://drlivedrtvb-hls.akamaized.net/hls/live/20002984/drlivedrtvb/master.m3u8",
     },
 }
 
