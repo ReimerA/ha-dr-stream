@@ -5,6 +5,15 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-23
+
+### Fixed
+- Radio stations, logos and P4/P5 regions load from DR again. DR's radio API
+  started rejecting Home Assistant's requests, so only the built-in station
+  list was shown.
+- Updated the built-in stream addresses for DR Ramasjang and DRTV Ekstra,
+  which DR has moved.
+
 ## [0.5.0] - 2026-11-18
 
 ### Changed (breaking)
