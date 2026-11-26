@@ -12,9 +12,6 @@ import aiohttp
 from .const import API_BASE, API_PARAMS, RADIO_API_URL, RADIO_IMAGE_URL
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=15)
-# DR's radio API answers 401 to aiohttp's (and Home Assistant's) default
-# User-Agent, but accepts a browser one.
-RADIO_HEADERS = {"User-Agent": "Mozilla/5.0"}
 _IMAGE_SIZE_RE = re.compile(r"Width=\d+&Height=\d+")
 
 
@@ -84,15 +81,10 @@ class DRTVClient:
             f"{API_BASE}{path}", {**API_PARAMS, **(params or {})}
         )
 
-    async def _get_url(
-        self,
-        url: str,
-        params: dict[str, str] | None = None,
-        headers: dict[str, str] | None = None,
-    ) -> Any:
+    async def _get_url(self, url: str, params: dict[str, str] | None = None) -> Any:
         try:
             async with self._session.get(
-                url, params=params, headers=headers, timeout=REQUEST_TIMEOUT
+                url, params=params, timeout=REQUEST_TIMEOUT
             ) as resp:
                 resp.raise_for_status()
                 return await resp.json()
@@ -101,7 +93,7 @@ class DRTVClient:
 
     async def async_get_radio_stations(self) -> list[RadioStation]:
         """Fetch DR's radio stations, with P4/P5 split into regions."""
-        data = await self._get_url(RADIO_API_URL, headers=RADIO_HEADERS)
+        data = await self._get_url(RADIO_API_URL)
         try:
             return parse_radio_stations(data)
         except (KeyError, TypeError, AttributeError) as err:

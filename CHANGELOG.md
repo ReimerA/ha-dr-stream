@@ -5,6 +5,12 @@ Versions follow [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+### Changed
+- Reverted 0.5.1's radio fix, which did not work. DR's radio API now asks for
+  an API key on some of its servers and rejects many requests, whatever the
+  client. When that happens the built-in station list is used, so radio keeps
+  playing.
+
 ## [0.5.1] - 2026-11-23
 
 ### Fixed
